@@ -1,0 +1,109 @@
+{
+  "documents": [
+    {
+      "id": "doc1",
+      "title": "Getting Started with Claude API",
+      "content": "To get started with the Claude API, obtain an API key from console.anthropic.com. The API uses JSON format with the base URL https://api.anthropic.com/v1/messages. Include your API key in the x-api-key header and set content-type to application/json. The API supports Python (3.7+), TypeScript/JavaScript (4.5+), Java (8+), Go, and Ruby SDKs. For Python, install with 'pip install anthropic'. For JavaScript/Node.js, use '@anthropic-ai/sdk'. The API also offers an OpenAI-compatible endpoint for easy migration.",
+      "category": "technical",
+      "keywords": ["api", "getting started", "api key", "authentication", "setup", "sdk", "integration"]
+    },
+    {
+      "id": "doc2",
+      "title": "Claude Model Comparison and Specifications",
+      "content": "Claude offers several models: Claude 4 Opus ($15/M input, $75/M output) - our most intelligent model with 72.5% on SWE-bench, best for complex AI agents and deep research. Claude 4 Sonnet (claude-sonnet-4-20250514, $3/M input, $15/M output) - balanced performance for coding and content generation. Claude 3.5 Haiku (claude-3-5-haiku-20241022, $0.80/M input, $4/M output) - fast and cost-effective, surpasses Claude 3 Opus on many benchmarks. All models support 200K token context windows. Claude 4 Sonnet supports up to 64K output tokens, while Claude 4 Opus supports 32K output tokens.",
+      "category": "feature",
+      "keywords": ["models", "haiku", "sonnet", "opus", "comparison", "performance", "context window", "pricing", "specifications"]
+    },
+    {
+      "id": "doc3",
+      "title": "API Rate Limits and Pricing Details",
+      "content": "Rate limits are measured in requests per minute (RPM), input tokens per minute (ITPM), and output tokens per minute (OTPM) at the organization level. The API uses a token bucket algorithm for continuous capacity replenishment. When limits are exceeded, you'll receive a 429 error with a retry-after header. Pricing features include Prompt Caching (up to 90% cost savings), Batch API (50% discount for async processing), and volume discounts for high-volume users. Free tier users have lower limits while paid plans offer progressively higher limits with automatic tier progression.",
+      "category": "billing",
+      "keywords": ["rate limits", "pricing", "tokens", "billing", "costs", "subscription", "429 error", "prompt caching", "batch api"]
+    },
+    {
+      "id": "doc4",
+      "title": "Error Handling and Troubleshooting Guide",
+      "content": "Common API errors: 400 (invalid request format), 401 (authentication error - check API key), 403 (permission denied), 404 (resource not found), 429 (rate limit exceeded - implement exponential backoff), 500 (internal API error), 529 (API temporarily overloaded - gradually ramp up traffic). Error responses include type and message fields. When contacting support, include the request-id header. For long-running requests, use streaming or batch API. Monitor status.anthropic.com for system status updates.",
+      "category": "technical",
+      "keywords": ["errors", "troubleshooting", "rate limit", "authentication", "503", "429", "401", "500", "529", "error codes"]
+    },
+    {
+      "id": "doc5",
+      "title": "Data Privacy, Security, and Compliance",
+      "content": "Anthropic is SOC 2 Type I & II certified, ISO 27001:2022 and ISO/IEC 42001:2023 compliant, and HIPAA configurable. We offer FedRAMP High and IL-2 authorization via Google Vertex AI. Standard data retention is up to 2 years for inputs/outputs, with zero data retention available for approved enterprise customers. All data is encrypted at rest and in transit. We do not train models on user API data. Enterprise features include SSO, domain capture, audit logs, custom retention controls, and Business Associate Agreements (BAA) for HIPAA. Visit trust.anthropic.com for compliance documentation.",
+      "category": "legal",
+      "keywords": ["privacy", "security", "gdpr", "compliance", "encryption", "soc2", "hipaa", "fedramp", "iso", "data retention"]
+    },
+    {
+      "id": "doc6",
+      "title": "Account Management and Team Features",
+      "content": "Manage your account at console.anthropic.com. Features include API key management, billing updates, and team member management. Available roles: Admin (full access), Developer (API access), and Viewer (read-only). Claude for Teams ($30/user/month, minimum 5 seats) includes 200K context window, admin tools, and increased usage vs Pro. Enterprise accounts get SSO, domain capture, audit logs, and custom data retention. Note: Claude for Teams does not include Claude Code access. For enterprise features, contact sales.",
+      "category": "account",
+      "keywords": ["account", "team", "roles", "permissions", "sso", "billing", "enterprise", "admin", "claude for teams"]
+    },
+    {
+      "id": "doc7",
+      "title": "Best Practices for Prompting Claude",
+      "content": "Effective prompting tips: Be specific and clear in instructions. Use examples for complex tasks (few-shot prompting). Break complex tasks into steps. Use system prompts to set context and behavior. Claude responds well to structured formats like XML or JSON. With 200K token context windows, you can include substantial information. For vision tasks, Claude supports JPEG, PNG, GIF, WebP formats (up to 5 images on claude.ai, 20 via API). Claude cannot identify people in images. For PDFs, Claude can analyze up to 100 pages including text and visual elements.",
+      "category": "usage",
+      "keywords": ["prompting", "best practices", "examples", "system prompt", "context window", "vision", "images", "pdf"]
+    },
+    {
+      "id": "doc8",
+      "title": "API Features and Integration Options",
+      "content": "The Messages API is the primary endpoint for Claude interactions. Additional APIs include Models API (query available models), Message Batches API (process large batches asynchronously), and Token Counting API (calculate usage before sending). Streaming is supported with basic streaming, fine-grained tool streaming (beta), and extended thinking. Integration options include direct API, Amazon Bedrock (with enterprise features), and Google Vertex AI (FedRAMP High/IL-2). Code execution tool (beta) available for $0.05 per session-hour.",
+      "category": "technical",
+      "keywords": ["integration", "sdk", "streaming", "messages api", "batch api", "token counting", "bedrock", "vertex ai", "code execution"]
+    },
+    {
+      "id": "doc9",
+      "title": "Claude.ai Subscription Plans",
+      "content": "Claude.ai offers multiple subscription tiers: Free Tier (daily message limits vary by demand), Claude Pro ($20/month, ~45 messages per 5 hours), Claude Max 5x ($100/month, ~225 messages per 5 hours), Claude Max 20x ($200/month, ~900 messages per 5 hours). Claude Max plans include access to Claude 4 Opus. All paid plans include priority access during high-traffic periods, early access to new features, and higher usage limits. Message limits reset on a rolling 5-hour window.",
+      "category": "billing",
+      "keywords": ["claude.ai", "subscription", "pro", "max", "pricing", "message limits", "free tier"]
+    },
+    {
+      "id": "doc10",
+      "title": "Claude Code CLI Tool",
+      "content": "Claude Code is a command-line tool for coding assistance with direct terminal integration. Features include codebase mapping and understanding, GitHub/GitLab integration, MCP server support, and background tasks via GitHub Actions. Available with Claude Max plans (access to Opus 4) and standard API access (Sonnet 4). Claude Code helps with debugging, code generation, refactoring, and understanding complex codebases. It can run commands, edit files, and provide contextual assistance based on your entire project structure.",
+      "category": "feature",
+      "keywords": ["claude code", "cli", "command line", "coding", "github", "gitlab", "mcp", "terminal"]
+    },
+    {
+      "id": "doc11",
+      "title": "Vision and Multimodal Capabilities",
+      "content": "Claude's vision capabilities include analyzing charts, graphs, technical diagrams, and extracting data from images. Claude 3.5 Sonnet is our strongest vision model, excellent for chart interpretation. Supported formats: JPEG, PNG, GIF, WebP. Limitations: Cannot identify people, generate/edit/manipulate images, or count objects beyond 10. For best results, place images before text, use high-resolution images, and ask specific questions. PDF support includes both text extraction and visual element analysis for documents up to 100 pages.",
+      "category": "feature",
+      "keywords": ["vision", "images", "multimodal", "charts", "diagrams", "pdf", "visual analysis", "ocr"]
+    },
+    {
+      "id": "doc12",
+      "title": "Language Support and Translation",
+      "content": "Claude has strongest performance in English but offers excellent support for Portuguese, French, German, Spanish, and Japanese. The model provides broad multilingual capabilities with full Unicode support, enabling communication in most world languages. Claude can translate between languages, analyze multilingual documents, and generate content in multiple languages. For best results in non-English languages, provide clear instructions and examples in the target language. Claude can also help with language learning and linguistic analysis.",
+      "category": "feature",
+      "keywords": ["languages", "translation", "multilingual", "unicode", "portuguese", "french", "german", "spanish", "japanese"]
+    },
+    {
+      "id": "doc13",
+      "title": "Safety Features and Responsible AI",
+      "content": "Claude is trained using Constitutional AI for enhanced safety and helpfulness. Features include built-in safety filters, ASL-2 safety level compliance, regular red team assessments, and privacy-focused design that doesn't train on user data. Claude is designed to be helpful, harmless, and honest. The model refuses harmful requests while explaining why, and provides thoughtful responses on sensitive topics. For enterprise users, additional safety controls and monitoring options are available.",
+      "category": "legal",
+      "keywords": ["safety", "constitutional ai", "responsible ai", "ethics", "harmful content", "asl-2", "red team"]
+    },
+    {
+      "id": "doc14",
+      "title": "Token Limits and Context Management",
+      "content": "All Claude models support 200,000 token context windows (roughly 150,000 words or 500 pages). Output token limits vary: Claude 4 Sonnet supports up to 64K output tokens, Claude 4 Opus supports 32K, and Claude 3.5 models support 8,192 tokens (with beta headers for higher limits). Use the Token Counting API to calculate usage before sending requests. For optimal performance, place most important information at the beginning or end of long contexts. Prompt caching can reduce costs by up to 90% for repeated content.",
+      "category": "technical",
+      "keywords": ["tokens", "context window", "output limits", "token counting", "context management", "prompt caching"]
+    },
+    {
+      "id": "doc15",
+      "title": "Enterprise Features and Custom Solutions",
+      "content": "Enterprise customers get access to SSO integration, domain capture for team management, comprehensive audit logs, custom data retention policies, native GitHub integration, and priority support. Additional options include dedicated capacity, custom model fine-tuning (select customers), VPC peering, and Business Associate Agreements for HIPAA compliance. Enterprise plans also include advanced usage analytics, role-based access control, and API usage governance tools. Contact sales for custom pricing and implementation support.",
+      "category": "account",
+      "keywords": ["enterprise", "sso", "custom solutions", "audit logs", "github integration", "vpc", "dedicated capacity", "governance"]
+    }
+  ]
+}
