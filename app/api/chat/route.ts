@@ -75,6 +75,7 @@ export async function POST(req: Request) {
   // Extract data from the request body
   const { messages, model } = await req.json();
   const latestMessage = messages[messages.length - 1].content;
+  const latestImages = messages[messages.length - 1].images;
 
   console.log("📝 Latest Query:", latestMessage);
   measureTime("User Input Received");
@@ -140,6 +141,8 @@ export async function POST(req: Request) {
 
   // Change the system prompt company for your use case
   const systemPrompt = `You are acting as an Anthropic customer support assistant chatbot inside a chat window on a website. You are chatting with a human user who is asking for help about Anthropic's products and services. When responding to the user, aim to provide concise and helpful responses while maintaining a polite and professional tone.
+
+  You have vision capabilities and can analyze images that users upload. If a user shares a screenshot or image, analyze it carefully and provide relevant assistance based on what you see in the image.
 
   To help you answer the user's question, we have retrieved the following information for you. It may or may not be relevant (we are using a RAG pipeline to retrieve this information):
   ${isRagWorking ? `${retrievedContext}` : "No information found for this query."}
@@ -220,14 +223,32 @@ export async function POST(req: Request) {
     console.log(`🚀 Query Processing`);
     measureTime("Claude Generation Start");
 
-    const anthropicMessages = messages.map((msg: any) => ({
-      role: msg.role,
-      content: msg.content,
-    }));
+    const anthropicMessages = messages.map((msg: any) => {
+      const messageContent: any[] = [{ type: "text", text: msg.content }];
+      
+      // Add images if present (for multimodal input)
+      if (msg.images && msg.images.length > 0) {
+        msg.images.forEach((image: any) => {
+          messageContent.push({
+            type: "image",
+            source: {
+              type: "base64",
+              media_type: image.type,
+              data: image.data.split(',')[1], // Remove data:image/png;base64, prefix
+            },
+          });
+        });
+      }
+      
+      return {
+        role: msg.role,
+        content: messageContent,
+      };
+    });
 
     anthropicMessages.push({
       role: "assistant",
-      content: "{",
+      content: [{ type: "text", text: "{" }],
     });
 
     const response = await anthropic.messages.create({

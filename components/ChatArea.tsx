@@ -7,6 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import ReactMarkdown from "react-markdown";
 import rehypeHighlight from "rehype-highlight";
 import rehypeRaw from "rehype-raw";
+import rehypeSanitize from "rehype-sanitize";
 import {
   HandHelping,
   WandSparkles,
@@ -14,6 +15,14 @@ import {
   BookOpenText,
   ChevronDown,
   Send,
+  Copy,
+  Check,
+  ExternalLink,
+  Upload,
+  ImageIcon,
+  X,
+  FileImage,
+  Paperclip,
 } from "lucide-react";
 import "highlight.js/styles/atom-one-dark.css";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
@@ -25,6 +34,13 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Badge } from "@/components/ui/badge";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 const TypedText = ({ text = "", delay = 5 }) => {
   const [displayedText, setDisplayedText] = useState("");
@@ -38,6 +54,122 @@ const TypedText = ({ text = "", delay = 5 }) => {
   }, [text, displayedText, delay]);
 
   return <>{displayedText}</>;
+};
+
+const getSpeedBadgeColor = (speed: string) => {
+  switch (speed) {
+    case 'fast':
+      return 'bg-green-100 text-green-800 hover:bg-green-200';
+    case 'balanced':
+      return 'bg-blue-100 text-blue-800 hover:bg-blue-200';
+    case 'thorough':
+      return 'bg-purple-100 text-purple-800 hover:bg-purple-200';
+    default:
+      return 'bg-gray-100 text-gray-800 hover:bg-gray-200';
+  }
+};
+
+const CodeBlock = ({ children, className, ...props }: any) => {
+  const [copied, setCopied] = useState(false);
+  const codeRef = useRef<HTMLElement>(null);
+  
+  const copyToClipboard = async () => {
+    if (codeRef.current) {
+      const code = codeRef.current.textContent || '';
+      try {
+        await navigator.clipboard.writeText(code);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      } catch (err) {
+        console.error('Failed to copy code:', err);
+      }
+    }
+  };
+
+  const language = className?.replace('language-', '') || '';
+
+  return (
+    <div className="relative group my-4">
+      <div className="flex items-center justify-between bg-gray-800 px-4 py-2 text-sm text-gray-300 rounded-t-md">
+        <span>{language || 'code'}</span>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={copyToClipboard}
+          className="h-6 w-6 p-0 text-gray-300 hover:text-white opacity-0 group-hover:opacity-100 transition-opacity"
+        >
+          {copied ? (
+            <Check className="h-3 w-3" />
+          ) : (
+            <Copy className="h-3 w-3" />
+          )}
+        </Button>
+      </div>
+      <pre className="overflow-x-auto bg-gray-900 p-4 rounded-b-md">
+        <code ref={codeRef} className={className} {...props}>
+          {children}
+        </code>
+      </pre>
+    </div>
+  );
+};
+
+// Image utility functions
+const ALLOWED_IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/jpg', 'image/gif'];
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+
+const validateImageFile = (file: File): { valid: boolean; error?: string } => {
+  if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+    return { 
+      valid: false, 
+      error: 'Please upload a PNG, JPG, or GIF image.' 
+    };
+  }
+  
+  if (file.size > MAX_FILE_SIZE) {
+    return { 
+      valid: false, 
+      error: 'File size must be less than 5MB.' 
+    };
+  }
+  
+  return { valid: true };
+};
+
+const compressImage = (file: File, maxWidth = 1920, quality = 0.8): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const img = new window.Image();
+    
+    img.onload = () => {
+      // Calculate new dimensions
+      let { width, height } = img;
+      if (width > maxWidth) {
+        height = (height * maxWidth) / width;
+        width = maxWidth;
+      }
+      
+      canvas.width = width;
+      canvas.height = height;
+      
+      // Draw and compress
+      ctx?.drawImage(img, 0, 0, width, height);
+      const compressedDataUrl = canvas.toDataURL(file.type, quality);
+      resolve(compressedDataUrl);
+    };
+    
+    img.onerror = () => reject(new Error('Failed to load image'));
+    img.src = URL.createObjectURL(file);
+  });
+};
+
+const formatFileSize = (bytes: number): string => {
+  if (bytes === 0) return '0 Bytes';
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 };
 
 type ThinkingContent = {
@@ -178,9 +310,117 @@ const MessageContent = ({
     return <div>Something went wrong. Please try again.</div>;
   }
 
+  const markdownComponents = {
+    code: ({ node, inline, className, children, ...props }: any) => {
+      if (inline) {
+        return (
+          <code 
+            className="bg-gray-100 text-gray-800 px-1.5 py-0.5 rounded text-sm font-mono" 
+            {...props}
+          >
+            {children}
+          </code>
+        );
+      }
+      return (
+        <CodeBlock className={className} {...props}>
+          {children}
+        </CodeBlock>
+      );
+    },
+    a: ({ href, children, ...props }: any) => (
+      <a
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-blue-600 hover:text-blue-800 underline inline-flex items-center gap-1"
+        {...props}
+      >
+        {children}
+        <ExternalLink className="h-3 w-3" />
+      </a>
+    ),
+    h1: ({ children, ...props }: any) => (
+      <h1 className="text-2xl font-bold mt-6 mb-4 text-gray-900" {...props}>
+        {children}
+      </h1>
+    ),
+    h2: ({ children, ...props }: any) => (
+      <h2 className="text-xl font-semibold mt-5 mb-3 text-gray-900" {...props}>
+        {children}
+      </h2>
+    ),
+    h3: ({ children, ...props }: any) => (
+      <h3 className="text-lg font-medium mt-4 mb-2 text-gray-900" {...props}>
+        {children}
+      </h3>
+    ),
+    ul: ({ children, ...props }: any) => (
+      <ul className="list-disc list-inside my-3 space-y-1" {...props}>
+        {children}
+      </ul>
+    ),
+    ol: ({ children, ...props }: any) => (
+      <ol className="list-decimal list-inside my-3 space-y-1" {...props}>
+        {children}
+      </ol>
+    ),
+    li: ({ children, ...props }: any) => (
+      <li className="text-gray-700" {...props}>
+        {children}
+      </li>
+    ),
+    blockquote: ({ children, ...props }: any) => (
+      <blockquote 
+        className="border-l-4 border-gray-300 pl-4 my-4 italic text-gray-600" 
+        {...props}
+      >
+        {children}
+      </blockquote>
+    ),
+    table: ({ children, ...props }: any) => (
+      <div className="overflow-x-auto my-4">
+        <table className="min-w-full border border-gray-300 rounded-lg" {...props}>
+          {children}
+        </table>
+      </div>
+    ),
+    th: ({ children, ...props }: any) => (
+      <th 
+        className="border border-gray-300 bg-gray-50 px-4 py-2 text-left font-semibold" 
+        {...props}
+      >
+        {children}
+      </th>
+    ),
+    td: ({ children, ...props }: any) => (
+      <td className="border border-gray-300 px-4 py-2" {...props}>
+        {children}
+      </td>
+    ),
+    p: ({ children, ...props }: any) => (
+      <p className="my-2 leading-relaxed" {...props}>
+        {children}
+      </p>
+    ),
+    strong: ({ children, ...props }: any) => (
+      <strong className="font-semibold" {...props}>
+        {children}
+      </strong>
+    ),
+    em: ({ children, ...props }: any) => (
+      <em className="italic" {...props}>
+        {children}
+      </em>
+    ),
+  };
+
   return (
     <>
-      <ReactMarkdown rehypePlugins={[rehypeRaw, rehypeHighlight]}>
+      <ReactMarkdown 
+        rehypePlugins={[rehypeRaw, rehypeSanitize, rehypeHighlight]}
+        components={markdownComponents}
+      >
         {parsed.response || content}
       </ReactMarkdown>
       {parsed.redirect_to_agent && (
@@ -194,12 +434,21 @@ const MessageContent = ({
 type Model = {
   id: string;
   name: string;
+  description: string;
+  speed: 'fast' | 'balanced' | 'thorough';
+  capabilities: string[];
 };
 
 interface Message {
   id: string;
   role: string;
   content: string;
+  images?: {
+    data: string; // base64 encoded image
+    type: string; // image/png, image/jpeg, etc.
+    name: string; // filename
+    size: number; // file size in bytes
+  }[];
 }
 
 // Define the props interface for ConversationHeader
@@ -216,66 +465,290 @@ const ConversationHeader: React.FC<ConversationHeaderProps> = ({
   setSelectedModel,
   models,
   showAvatar,
-}) => (
-  <div className="p-0 flex flex-col sm:flex-row items-start sm:items-center justify-between pb-2 animate-fade-in">
-    <div className="flex items-center space-x-4 mb-2 sm:mb-0">
-      {showAvatar && (
-        <>
-          <Avatar className="w-10 h-10 border">
-            <AvatarImage
-              src="/ant-logo.svg"
-              alt="AI Assistant Avatar"
-              width={40}
-              height={40}
-            />
-            <AvatarFallback>AI</AvatarFallback>
-          </Avatar>
-          <div>
-            <h3 className="text-sm font-medium leading-none">AI Agent</h3>
-          </div>
-        </>
+}) => {
+  const currentModel = models.find((m) => m.id === selectedModel);
+  
+  return (
+    <div className="p-0 flex flex-col sm:flex-row items-start sm:items-center justify-between pb-2 animate-fade-in">
+      <div className="flex items-center space-x-4 mb-2 sm:mb-0">
+        {showAvatar && (
+          <>
+            <Avatar className="w-10 h-10 border">
+              <AvatarImage
+                src="/ant-logo.svg"
+                alt="AI Assistant Avatar"
+                width={40}
+                height={40}
+              />
+              <AvatarFallback>AI</AvatarFallback>
+            </Avatar>
+            <div>
+              <h3 className="text-sm font-medium leading-none">AI Agent</h3>
+            </div>
+          </>
+        )}
+      </div>
+      <div className="flex space-x-2 w-full sm:w-auto">
+        <TooltipProvider>
+          <DropdownMenu>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-grow text-muted-foreground sm:flex-grow-0 justify-between"
+                  >
+                    <div className="flex items-center space-x-2">
+                      <span>{currentModel?.name}</span>
+                      {currentModel && (
+                        <Badge 
+                          variant="secondary" 
+                          className={`text-xs ${getSpeedBadgeColor(currentModel.speed)}`}
+                        >
+                          {currentModel.speed}
+                        </Badge>
+                      )}
+                    </div>
+                    <ChevronDown className="ml-2 h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+              </TooltipTrigger>
+              <TooltipContent>
+                <div className="max-w-xs">
+                  <p className="font-medium">{currentModel?.name}</p>
+                  <p className="text-sm text-muted-foreground">{currentModel?.description}</p>
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    {currentModel?.capabilities.map((capability, index) => (
+                      <Badge key={index} variant="outline" className="text-xs">
+                        {capability}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              </TooltipContent>
+            </Tooltip>
+            <DropdownMenuContent className="w-80">
+              {models.map((model) => (
+                <DropdownMenuItem
+                  key={model.id}
+                  onSelect={() => setSelectedModel(model.id)}
+                  className="flex flex-col items-start p-3 cursor-pointer"
+                >
+                  <div className="flex items-center justify-between w-full mb-1">
+                    <span className="font-medium">{model.name}</span>
+                    <Badge 
+                      variant="secondary" 
+                      className={`text-xs ${getSpeedBadgeColor(model.speed)}`}
+                    >
+                      {model.speed}
+                    </Badge>
+                  </div>
+                  <p className="text-sm text-muted-foreground mb-2">{model.description}</p>
+                  <div className="flex flex-wrap gap-1">
+                    {model.capabilities.map((capability, index) => (
+                      <Badge key={index} variant="outline" className="text-xs">
+                        {capability}
+                      </Badge>
+                    ))}
+                  </div>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </TooltipProvider>
+      </div>
+    </div>
+  );
+};
+
+// Image Upload Component
+interface ImageUploadProps {
+  onImagesChange: (images: Message['images']) => void;
+  images: Message['images'];
+  disabled?: boolean;
+}
+
+const ImageUpload: React.FC<ImageUploadProps> = ({ onImagesChange, images = [], disabled }) => {
+  const [isDragging, setIsDragging] = useState(false);
+  const [uploadError, setUploadError] = useState<string>('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileSelect = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    
+    const newImages: Message['images'] = [];
+    setUploadError('');
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const validation = validateImageFile(file);
+      
+      if (!validation.valid) {
+        setUploadError(validation.error || 'Invalid file');
+        continue;
+      }
+
+      try {
+        const compressedDataUrl = await compressImage(file);
+        newImages.push({
+          data: compressedDataUrl,
+          type: file.type,
+          name: file.name,
+          size: file.size,
+        });
+      } catch (error) {
+        console.error('Error processing image:', error);
+        setUploadError('Failed to process image');
+      }
+    }
+
+    if (newImages.length > 0) {
+      onImagesChange([...images, ...newImages]);
+    }
+  };
+
+  const removeImage = (index: number) => {
+    const updatedImages = images.filter((_, i) => i !== index);
+    onImagesChange(updatedImages);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    if (!disabled) {
+      handleFileSelect(e.dataTransfer.files);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    if (!disabled) {
+      setIsDragging(true);
+    }
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  return (
+    <div className="space-y-2">
+      {/* Upload Button */}
+      <div className="flex items-center space-x-2">
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          multiple
+          onChange={(e) => handleFileSelect(e.target.files)}
+          className="hidden"
+          disabled={disabled}
+        />
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={disabled}
+          className="flex items-center space-x-1"
+        >
+          <Paperclip className="h-4 w-4" />
+          <span>Attach Image</span>
+        </Button>
+        {uploadError && (
+          <span className="text-sm text-red-500">{uploadError}</span>
+        )}
+      </div>
+
+      {/* Drag and Drop Area */}
+      {!disabled && (
+        <div
+          onDrop={handleDrop}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          className={`border-2 border-dashed rounded-lg p-4 text-center transition-colors ${
+            isDragging
+              ? 'border-blue-400 bg-blue-50'
+              : 'border-gray-300 hover:border-gray-400'
+          }`}
+        >
+          <Upload className="mx-auto h-6 w-6 text-gray-400 mb-2" />
+          <p className="text-sm text-gray-600">
+            Drag and drop images here, or click to select
+          </p>
+          <p className="text-xs text-gray-500 mt-1">
+            PNG, JPG, GIF up to 5MB
+          </p>
+        </div>
+      )}
+
+      {/* Image Previews */}
+      {images && images.length > 0 && (
+        <div className="space-y-2">
+          {images.map((image, index) => (
+            <div
+              key={index}
+              className="flex items-center space-x-3 p-2 bg-gray-50 rounded-lg"
+            >
+              <img
+                src={image.data}
+                alt={image.name}
+                className="w-12 h-12 object-cover rounded"
+              />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-gray-900 truncate">
+                  {image.name}
+                </p>
+                <p className="text-xs text-gray-500">
+                  {formatFileSize(image.size)}
+                </p>
+              </div>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => removeImage(index)}
+                disabled={disabled}
+                className="h-8 w-8 p-0 text-gray-400 hover:text-red-500"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          ))}
+        </div>
       )}
     </div>
-    <div className="flex space-x-2 w-full sm:w-auto">
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button
-            variant="outline"
-            size="sm"
-            className="flex-grow text-muted-foreground sm:flex-grow-0"
-          >
-            {models.find((m) => m.id === selectedModel)?.name}
-            <ChevronDown className="ml-2 h-4 w-4" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent>
-          {models.map((model) => (
-            <DropdownMenuItem
-              key={model.id}
-              onSelect={() => setSelectedModel(model.id)}
-            >
-              {model.name}
-            </DropdownMenuItem>
-          ))}
-        </DropdownMenuContent>
-      </DropdownMenu>
-    </div>
-  </div>
-);
+  );
+};
 
 function ChatArea() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [showHeader, setShowHeader] = useState(false);
-  const [selectedModel, setSelectedModel] = useState("claude-3-5-sonnet-20240620");
+  const [selectedModel, setSelectedModel] = useState("claude-sonnet-4-20250514");
   const [showAvatar, setShowAvatar] = useState(false);
+  const [currentImages, setCurrentImages] = useState<Message['images']>([]);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const models: Model[] = [
-    { id: "claude-3-haiku-20240307", name: "Claude 3 Haiku" },
-    { id: "claude-3-5-sonnet-20240620", name: "Claude 3.5 Sonnet" },
+    {
+      id: "claude-sonnet-4-20250514",
+      name: "Claude 4 Sonnet",
+      description: "Most capable model for complex reasoning and analysis",
+      speed: "thorough",
+      capabilities: ["Advanced reasoning", "Code analysis", "Complex problem solving"]
+    },
+    {
+      id: "claude-3-5-haiku-20241022",
+      name: "Claude 3.5 Haiku",
+      description: "Fast responses for quick questions and simple tasks",
+      speed: "fast",
+      capabilities: ["Quick responses", "Simple tasks", "Efficient processing"]
+    },
   ];
 
   const scrollToBottom = () => {
@@ -369,10 +842,11 @@ function ChatArea() {
     const clientStart = performance.now();
     console.log("🔄 Starting request: " + new Date().toISOString());
 
-    const userMessage = {
+    const userMessage: Message = {
       id: crypto.randomUUID(),
       role: "user",
       content: typeof event === "string" ? event : input,
+      images: currentImages && currentImages.length > 0 ? currentImages : undefined,
     };
 
     const placeholderMessage = {
@@ -394,6 +868,7 @@ function ChatArea() {
       placeholderMessage,
     ]);
     setInput("");
+    setCurrentImages([]);
 
     const placeholderDisplayed = performance.now();
     logDuration("Perceived Latency", placeholderDisplayed - clientStart);
@@ -607,6 +1082,24 @@ function ChatArea() {
                           : "bg-muted border"
                       }`}
                     >
+                      {/* Display images for user messages */}
+                      {message.role === "user" && message.images && message.images.length > 0 && (
+                        <div className="mb-3 space-y-2">
+                          {message.images.map((image, imgIndex) => (
+                            <div key={imgIndex} className="relative">
+                              <img
+                                src={image.data}
+                                alt={image.name}
+                                className="max-w-full h-auto rounded border"
+                                style={{ maxHeight: "200px" }}
+                              />
+                              <div className="text-xs opacity-75 mt-1">
+                                {image.name} ({formatFileSize(image.size)})
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                       <MessageContent
                         content={message.content}
                         role={message.role}
@@ -631,46 +1124,61 @@ function ChatArea() {
       </CardContent>
 
       <CardFooter className="p-4 pt-0">
-        <form
-          onSubmit={handleSubmit}
-          className="flex flex-col w-full relative bg-background border rounded-xl focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2"
-        >
-          <Textarea
-            value={input}
-            onChange={handleInputChange}
-            onKeyDown={handleKeyDown}
-            placeholder="Type your message here..."
+        <div className="space-y-3">
+          {/* Image Upload Component */}
+          <ImageUpload
+            onImagesChange={setCurrentImages}
+            images={currentImages}
             disabled={isLoading}
-            className="resize-none min-h-[44px] bg-background  border-0 p-3 rounded-xl shadow-none focus-visible:ring-0"
-            rows={1}
           />
-          <div className="flex justify-between items-center p-3">
-            <div>
-              <Image
-                src="/claude-icon.svg"
-                alt="Claude Icon"
-                width={0}
-                height={14}
-                className="w-auto h-[14px] mt-1"
-              />
+
+          <form
+            onSubmit={handleSubmit}
+            className="flex flex-col w-full relative bg-background border rounded-xl focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2"
+          >
+            <Textarea
+              value={input}
+              onChange={handleInputChange}
+              onKeyDown={handleKeyDown}
+              placeholder="Type your message here..."
+              disabled={isLoading}
+              className="resize-none min-h-[44px] bg-background  border-0 p-3 rounded-xl shadow-none focus-visible:ring-0"
+              rows={1}
+            />
+            <div className="flex justify-between items-center p-3">
+              <div className="flex items-center space-x-2">
+                <Image
+                  src="/claude-icon.svg"
+                  alt="Claude Icon"
+                  width={0}
+                  height={14}
+                  className="w-auto h-[14px] mt-1"
+                />
+                {currentImages && currentImages.length > 0 && (
+                  <div className="flex items-center text-xs text-muted-foreground">
+                    <FileImage className="h-3 w-3 mr-1" />
+                    {currentImages.length} image{currentImages.length > 1 ? 's' : ''} attached
+                  </div>
+                )}
+              </div>
+              <Button
+                type="submit"
+                disabled={isLoading || (input.trim() === "" && (!currentImages || currentImages.length === 0))}
+                className="gap-2"
+                size="sm"
+              >
+                {isLoading ? (
+                  <div className="animate-spin h-5 w-5 border-t-2 border-white rounded-full" />
+                ) : (
+                  <>
+                    Send Message
+                    <Send className="h-4 w-4" />
+                  </>
+                )}
+              </Button>
             </div>
-            <Button
-              type="submit"
-              disabled={isLoading || input.trim() === ""}
-              className="gap-2"
-              size="sm"
-            >
-              {isLoading ? (
-                <div className="animate-spin h-5 w-5 border-t-2 border-white rounded-full" />
-              ) : (
-                <>
-                  Send Message
-                  <Send className="h-4 w-4" />
-                </>
-              )}
-            </Button>
-          </div>
-        </form>
+          </form>
+        </div>
       </CardFooter>
     </Card>
   );
