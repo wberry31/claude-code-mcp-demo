@@ -87,8 +87,8 @@ This will configure Claude to access your GitHub repositories through the MCP se
 
 This project supports multiple Claude models. The currently configured models are:
 
-- **Claude 3.5 Haiku** - Fast and efficient for quick responses
-- **Claude 4 Sonnet** (Default) - Balanced performance and capabilities
+- **Claude 3 Haiku** - Fast and efficient for quick responses
+- **Claude 3.5 Sonnet** (Default) - Balanced performance and capabilities
 
 To switch between models:
 
