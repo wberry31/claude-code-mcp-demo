@@ -12,6 +12,12 @@ An advanced, fully customizable customer support chat interface powered by Claud
 -  Context viewing - click the context status to see full RAG context
 -  Highly customizable UI with shadcn/ui components
 
+## Clone the repo
+```
+git clone https://github.com/anthropic-krzim/claude-code-mcp-demo.git
+cd claude-code-mcp-demo
+```
+
 ## ⚙️ Configuration
 
 Before running the application, you need to set up your API key.
